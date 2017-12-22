@@ -495,12 +495,12 @@
   #endif
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  #define DELTA_DIAGONAL_ROD 268.086 // mm
+  #define DELTA_DIAGONAL_ROD 265.702 // actual value with micromake effector, for anycubic was 268.086 // mm
 
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
   #define DELTA_PRINTABLE_RADIUS 116.0
 
-  //#define DELTA_ENDSTOP_ADJ { -0.33, -0.11, 0.0 } // get these from auto calibrate
+  #define DELTA_ENDSTOP_ADJ { 0.0, 0.0, 0.0 } //{ -0.33, -0.11, 0.0 } // get these from auto calibrate
 
   // Horizontal distance bridged by diagonal push rods when effector is centered.
   #define DELTA_RADIUS 133.61 //mm  Get this value from auto calibrate
@@ -512,7 +512,7 @@
 
   // delta radius and diaginal rod adjustments measured in mm
   //#define DELTA_RADIUS_TRIM_TOWER { 0.0, 0.0, 0.0 }
-  #define DELTA_DIAGONAL_ROD_TRIM_TOWER { 0.0, 0.0, 0.0 } // { -1.3517, 0.4714, -0.2357 }
+  #define DELTA_DIAGONAL_ROD_TRIM_TOWER { 0.0, 0.0, 1.107 } // { -1.3517, 0.4714, -0.2357 }
 
 #endif
 
@@ -742,7 +742,7 @@
  */
 #define X_PROBE_OFFSET_FROM_EXTRUDER 0.0     // X offset: -left  +right  [of the nozzle]
 #define Y_PROBE_OFFSET_FROM_EXTRUDER 0.00   // Y offset: -front +behind [the nozzle]
-#define Z_PROBE_OFFSET_FROM_EXTRUDER -1.05  // Z offset: -below +above  [the nozzle]
+#define Z_PROBE_OFFSET_FROM_EXTRUDER 0.3  // Z offset: -below +above  [the nozzle]
 
 // X and Y axis travel speed (mm/m) between probes
 #define XY_PROBE_SPEED 4000
