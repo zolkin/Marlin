@@ -1,0 +1,29 @@
+SENDING:M503
+echo:  G21    ; Units in mm
+echo:  M149 C ; Units in Celsius
+echo:Filament settings: Disabled
+echo:  M200 D3.00
+echo:  M200 D0
+echo:Steps per unit:
+echo:  M92 X80.00 Y80.00 Z80.00 E96.00
+echo:Maximum feedrates (units/s):
+echo:  M203 X200.00 Y200.00 Z200.00 E200.00
+echo:Maximum Acceleration (units/s2):
+echo:  M201 X1000 Y1000 Z1000 E3000
+echo:Acceleration (units/s2): P<print_accel> R<retract_accel> T<travel_accel>
+echo:  M204 P2000.00 R2000.00 T2000.00
+echo:Advanced: S<min_feedrate> T<min_travel_feedrate> B<min_segment_time_ms> X<max_xy_jerk> Z<max_z_jerk> E<max_e_jerk>
+echo:  M205 S0.00 T0.00 B20000 X5.00 Y5.00 Z5.00 E5.00
+echo:Auto Bed Leveling:
+echo:  M420 S0
+echo:Endstop adjustment:
+echo:  M666 X-0.18 Y0.00 Z-2.05
+echo:Delta settings: L<diagonal_rod> R<radius> H<height> S<segments_per_s> B<calibration radius> XYZ<tower angle corrections>
+echo:  M665 L263.51 R129.55 H299.51 S100.00 B64.00 X-0.56 Y-0.50 Z0.00
+echo:Material heatup parameters:
+echo:  M145 S0 H210 B60 F255
+  M145 S1 H240 B100 F255
+echo:PID settings:
+echo:  M301 P22.20 I1.08 D114.00
+echo:Z-Probe Offset (mm):
+echo:  M851 Z0.95

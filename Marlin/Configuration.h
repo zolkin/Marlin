@@ -495,7 +495,7 @@
   #endif
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  #define DELTA_DIAGONAL_ROD 265.297 //265.702 // actual value with micromake effector, for anycubic was 268.086 // mm
+  #define DELTA_DIAGONAL_ROD 265.562 //265.702 // actual value with micromake effector, for anycubic was 268.086 // mm
 
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
   #define DELTA_PRINTABLE_RADIUS 116.0
@@ -512,7 +512,7 @@
 
   // delta radius and diaginal rod adjustments measured in mm
   //#define DELTA_RADIUS_TRIM_TOWER { 0.0, 0.0, 0.0 }
-  #define DELTA_DIAGONAL_ROD_TRIM_TOWER { 0.0, 0.0, 0.0 } //{ 0.0, 0.0, 1.107 } // { -1.3517, 0.4714, -0.2357 }
+  #define DELTA_DIAGONAL_ROD_TRIM_TOWER { 0.0445, 0.0, 0.840 } //{ 0.0, 0.0, 1.107 } // { -1.3517, 0.4714, -0.2357 }
 
 #endif
 
@@ -853,9 +853,9 @@
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR true // DELTA does not invert
-#define INVERT_Y_DIR true
-#define INVERT_Z_DIR true
+#define INVERT_X_DIR false // DELTA does not invert
+#define INVERT_Y_DIR false
+#define INVERT_Z_DIR false
 
 // @section extruder
 
