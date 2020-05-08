@@ -768,7 +768,7 @@ void MMU2::filament_runout() {
 
     ENABLE_AXIS_E0();
     current_position.e -= MMU2_FILAMENTCHANGE_EJECT_FEED;
-    line_to_current_position(2500 / 60);
+    line_to_current_position(MMU2_FILAMENTCHANGE_EJECT_FEEDRATE / 60);
     planner.synchronize();
     command(MMU_CMD_E0 + index);
     manage_response(false, false);
@@ -815,7 +815,10 @@ void MMU2::filament_runout() {
       return false;
     }
 
-    filament_ramming();
+    ENABLE_AXIS_E0();
+    current_position.e -= MMU2_FILAMENTCHANGE_EJECT_FEED;
+    line_to_current_position(MMU2_FILAMENTCHANGE_EJECT_FEEDRATE / 60);
+    planner.synchronize();
 
     command(MMU_CMD_U0);
     manage_response(false, true);

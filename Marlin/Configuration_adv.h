@@ -3266,8 +3266,10 @@
   #define MMU2_MENUS
   #if ENABLED(MMU2_MENUS)
     // Settings for filament load / unload from the LCD menu.
-    // This is for Prusa MK3-style extruders. Customize for your hardware.
-    #define MMU2_FILAMENTCHANGE_EJECT_FEED 270.0
+    // This is for Ancubic Predator with BMG extruder clone. Customize for your hardware.
+    #define MMU2_FILAMENTCHANGE_EJECT_FEED 270.0 // mm
+    #define MMU2_FILAMENTCHANGE_EJECT_FEEDRATE 2500 // mm/min.
+
     #define MMU2_LOAD_TO_NOZZLE_SEQUENCE \
       {  7.2,  562 }, \
       { 14.4,  871 }, \
@@ -3275,7 +3277,7 @@
       { 14.4,  871 }, \
       { 50.0,  198 }
 
-// Anycubic predator nozzle to gears distance - approx 280mm
+// Anycubic predator nozzle to gears distance - approx 260mm
     #define MMU2_RAMMING_SEQUENCE \
       {   1.0, 1000 }, \
       {   1.0, 1500 }, \
