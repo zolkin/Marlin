@@ -464,10 +464,15 @@ static bool mmu2_not_responding() {
 
   bool MMU2::load_to_gears() {
     command(MMU_CMD_C0);
+    ENABLE_AXIS_E0();
+    current_position.e += MMU2_C0_LOAD_LENGTH;
+    line_to_current_position(MMU2_C0_LOAD_FEEDRATE / 60);
     manage_response(true, true);
     LOOP_L_N(i, MMU2_C0_RETRY) {  // Keep loading until filament reaches gears
       if (mmu2s_triggered) break;
       command(MMU_CMD_C0);
+      current_position.e += MMU2_C0_LOAD_LENGTH;
+      line_to_current_position(MMU2_C0_LOAD_FEEDRATE / 60);
       manage_response(true, true);
       check_filament();
     }
@@ -490,20 +495,23 @@ void MMU2::tool_change(uint8_t index) {
   if (index != extruder) {
     ui.status_printf_P(0, GET_TEXT(MSG_MMU2_LOADING_FILAMENT), int(index + 1));
     
-    filament_ramming();
+    ENABLE_AXIS_E0();
+    current_position.e -= MMU2_FILAMENTCHANGE_EJECT_FEED;
+    line_to_current_position(MMU2_FILAMENTCHANGE_EJECT_FEEDRATE / 60);
+    planner.synchronize();
     DISABLE_AXIS_E0();
+
     command(MMU_CMD_T0 + index);
     manage_response(true, true);
 
-    if (unload()) {
-      DEBUG_ECHOLNPGM("MMU unload => ok");
-      if (load_to_gears()) {
-        extruder = index; // filament change is finished
-        active_extruder = 0;
-        ENABLE_AXIS_E0();
-        SERIAL_ECHO_START();
-        SERIAL_ECHOLNPAIR(STR_ACTIVE_EXTRUDER, int(extruder));
-      }
+    DEBUG_ECHOLNPGM("MMU unload => ok");
+    if (load_to_gears()) {
+      extruder = index; // filament change is finished
+      active_extruder = 0;
+      ENABLE_AXIS_E0();
+      execute_extruder_sequence((const E_Step *)load_to_nozzle_sequence, COUNT(load_to_nozzle_sequence));
+      SERIAL_ECHO_START();
+      SERIAL_ECHOLNPAIR(STR_ACTIVE_EXTRUDER, int(extruder));
     }
     ui.reset_status();
   }
@@ -815,10 +823,7 @@ void MMU2::filament_runout() {
       return false;
     }
 
-    ENABLE_AXIS_E0();
-    current_position.e -= MMU2_FILAMENTCHANGE_EJECT_FEED;
-    line_to_current_position(MMU2_FILAMENTCHANGE_EJECT_FEEDRATE / 60);
-    planner.synchronize();
+    filament_ramming();
 
     command(MMU_CMD_U0);
     manage_response(false, true);

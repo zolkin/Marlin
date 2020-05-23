@@ -1755,14 +1755,14 @@
 #if ENABLED(SDSUPPORT)
   #define BLOCK_BUFFER_SIZE 32 // SD,LCD,Buttons take more memory, block buffer needs to be smaller
 #else
-  #define BLOCK_BUFFER_SIZE 64 // maximize block buffer
+  #define BLOCK_BUFFER_SIZE 32 // maximize block buffer, ZOLKIN was 64
 #endif
 
 // @section serial
 
 // The ASCII buffer for serial input
 #define MAX_CMD_SIZE 96
-#define BUFSIZE 4
+#define BUFSIZE 32 // ZOLKIN was 4
 
 // Transmission to Host Buffer Size
 // To save 386 bytes of PROGMEM (and TX_BUFFER_SIZE+3 bytes of RAM) set to 0.
@@ -3267,15 +3267,17 @@
   #if ENABLED(MMU2_MENUS)
     // Settings for filament load / unload from the LCD menu.
     // This is for Ancubic Predator with BMG extruder clone. Customize for your hardware.
-    #define MMU2_FILAMENTCHANGE_EJECT_FEED 270.0 // mm
+    #define MMU2_FILAMENTCHANGE_EJECT_FEED 227.0 // mm
     #define MMU2_FILAMENTCHANGE_EJECT_FEEDRATE 2500 // mm/min.
+    #define MMU2_C0_LOAD_LENGTH 38.1 // mm
+    #define MMU2_C0_LOAD_FEEDRATE 1150 // mm/min
 
     #define MMU2_LOAD_TO_NOZZLE_SEQUENCE \
       {  7.2,  562 }, \
       { 14.4,  871 }, \
-      { 155.0, 1393 }, \
+      { 60.0, 1393 },\
       { 14.4,  871 }, \
-      { 50.0,  198 }
+      { 37.0,  500 }
 
 // Anycubic predator nozzle to gears distance - approx 260mm
     #define MMU2_RAMMING_SEQUENCE \
@@ -3289,13 +3291,13 @@
       {  -6.0,  600 }, \
       {  10.0,  700 }, \
       { -10.0,  400 }, \
-      { -215.0, 2000 }
+      { -165.0, 2000 }
   #endif
 
   // Using a sensor like the MMU2S
   #define PRUSA_MMU2_S_MODE
   #if ENABLED(PRUSA_MMU2_S_MODE)
-    #define MMU2_C0_RETRY   5             // Number of retries (total time = timeout*retries)
+    #define MMU2_C0_RETRY   10             // Number of retries (total time = timeout*retries)
 
     #define MMU2_CAN_LOAD_FEEDRATE 800    // (mm/m)
     #define MMU2_CAN_LOAD_SEQUENCE \
@@ -3303,7 +3305,7 @@
       {  60.0, MMU2_CAN_LOAD_FEEDRATE }, \
       { -52.0, MMU2_CAN_LOAD_FEEDRATE }
 
-    #define MMU2_CAN_LOAD_RETRACT   6.0   // (mm) Keep under the distance between Load Sequence values
+    #define MMU2_CAN_LOAD_RETRACT   4.0   // (mm) Keep under the distance between Load Sequence values
     #define MMU2_CAN_LOAD_DEVIATION 0.8   // (mm) Acceptable deviation
 
     #define MMU2_CAN_LOAD_INCREMENT 0.2   // (mm) To reuse within MMU2 module
