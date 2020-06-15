@@ -402,6 +402,8 @@ private:
 
   TERN_(BEZIER_CURVE_SUPPORT, static void G5());
 
+  TERN_(DIRECT_STEPPING, static void G6());
+
   #if ENABLED(FWRETRACT)
     static void G10();
     static void G11();
@@ -769,6 +771,10 @@ private:
   #if ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
     static void M701();
     static void M702();
+    static void M703();
+    static void M704();
+    static void M705();
+    static void M706();
   #endif
 
   TERN_(GCODE_MACROS, static void M810_819());

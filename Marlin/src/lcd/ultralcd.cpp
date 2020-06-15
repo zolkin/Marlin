@@ -95,6 +95,7 @@ MarlinUI ui;
 #include "lcdprint.h"
 
 #include "../sd/cardreader.h"
+#include "../module/configuration_store.h"
 #include "../module/temperature.h"
 #include "../module/planner.h"
 #include "../module/motion.h"
@@ -118,6 +119,7 @@ MarlinUI ui;
   #endif
   #if ENABLED(TOUCH_BUTTONS)
     #include "../feature/touch/xpt2046.h"
+    bool MarlinUI::on_edit_screen = false;
   #endif
 #endif
 
@@ -611,15 +613,12 @@ void MarlinUI::quick_feedback(const bool clear_buttons/*=true*/) {
     UNUSED(clear_buttons);
   #endif
 
-  #if HAS_BUZZER
-    // Buzz and wait. Is the delay needed for buttons to settle?
-    buzz(LCD_FEEDBACK_FREQUENCY_DURATION_MS, LCD_FEEDBACK_FREQUENCY_HZ);
-    #if HAS_LCD_MENU
-      #if USE_BEEPER
-        for (int8_t i = 5; i--;) { buzzer.tick(); delay(2); }
-      #else
-        delay(10);
-      #endif
+  #if HAS_CHIRP
+    chirp(); // Buzz and wait. Is the delay needed for buttons to settle?
+    #if BOTH(HAS_LCD_MENU, USE_BEEPER)
+      for (int8_t i = 5; i--;) { buzzer.tick(); delay(2); }
+    #elif HAS_LCD_MENU
+      delay(10);
     #endif
   #endif
 }
@@ -774,7 +773,7 @@ void MarlinUI::update() {
             if (!wait_for_unclick) {
               next_button_update_ms += 250;               // Longer delay on first press
               wait_for_unclick = true;                    // Avoid Back/Select click while repeating
-              TERN_(HAS_BUZZER, buzz(LCD_FEEDBACK_FREQUENCY_DURATION_MS, LCD_FEEDBACK_FREQUENCY_HZ));
+              chirp();
             }
           }
         }
@@ -879,12 +878,8 @@ void MarlinUI::update() {
     // This runs every ~100ms when idling often enough.
     // Instead of tracking changes just redraw the Status Screen once per second.
     if (on_status_screen() && !lcd_status_update_delay--) {
-      lcd_status_update_delay = 9
-        #if HAS_GRAPHICAL_LCD
-          + 3
-        #endif
-      ;
-      max_display_update_time--;
+      lcd_status_update_delay = TERN(HAS_GRAPHICAL_LCD, 12, 9);
+      if (max_display_update_time) max_display_update_time--;  // Be sure never go to a very big number
       refresh(LCDVIEW_REDRAW_NOW);
     }
 
@@ -1167,11 +1162,7 @@ void MarlinUI::update() {
           WRITE(SHIFT_CLK, HIGH);
           WRITE(SHIFT_CLK, LOW);
         }
-        #if ENABLED(REPRAPWORLD_KEYPAD)
-          keypad_buttons = ~val;
-        #else
-          buttons = ~val;
-        #endif
+        TERN(REPRAPWORLD_KEYPAD, keypad_buttons, buttons) = ~val;
       #endif
 
     } // next_button_update_ms
@@ -1238,7 +1229,7 @@ void MarlinUI::update() {
 
   void MarlinUI::finish_status(const bool persist) {
 
-    #if !(ENABLED(LCD_PROGRESS_BAR) && (PROGRESS_MSG_EXPIRE > 0))
+    #if !(ENABLED(LCD_PROGRESS_BAR) && (PROGRESS_MSG_EXPIRE) > 0)
       UNUSED(persist);
     #endif
 
@@ -1310,7 +1301,7 @@ void MarlinUI::update() {
     if (level < alert_level) return;
     alert_level = level;
 
-    TERN_(HOST_PROMPT_SUPPORT, host_action_notify(message));
+    TERN_(HOST_PROMPT_SUPPORT, host_action_notify_P(message));
 
     // Since the message is encoded in UTF8 it must
     // only be cut on a character boundary.
@@ -1438,20 +1429,40 @@ void MarlinUI::update() {
   #if HAS_PRINT_PROGRESS
 
     MarlinUI::progress_t MarlinUI::_get_progress() {
-      #if ENABLED(LCD_SET_PROGRESS_MANUALLY)
-        const progress_t p = progress_override & PROGRESS_MASK;
-      #else
-        constexpr progress_t p = 0;
-      #endif
-      return (p
+      return (
+        TERN0(LCD_SET_PROGRESS_MANUALLY, (progress_override & PROGRESS_MASK))
         #if ENABLED(SDSUPPORT)
-          #if HAS_PRINT_PROGRESS_PERMYRIAD
-            ?: card.permyriadDone()
-          #else
-            ?: card.percentDone()
-          #endif
+          ?: TERN(HAS_PRINT_PROGRESS_PERMYRIAD, card.permyriadDone(), card.percentDone())
         #endif
       );
+    }
+
+  #endif
+
+  #if ENABLED(TOUCH_BUTTONS)
+
+    //
+    // Screen Click
+    //  - On menu screens move directly to the touched item
+    //  - On menu screens, right side (last 3 cols) acts like a scroll - half up => prev page, half down = next page
+    //  - On select screens (and others) touch the Right Half for +, Left Half for -
+    //  - On edit screens, touch Up Half for -,  Bottom Half to +
+    //
+    void MarlinUI::screen_click(const uint8_t row, const uint8_t col, const uint8_t, const uint8_t) {
+      const int8_t xdir = col < (LCD_WIDTH ) / 2 ? -1 : 1,
+                   ydir = row < (LCD_HEIGHT) / 2 ? -1 : 1;
+      if (on_edit_screen)
+        encoderDiff = ENCODER_PULSES_PER_STEP * ydir;
+      else if (screen_items > 0) {
+        // Last 3 cols act as a scroll :-)
+        if (col > (LCD_WIDTH) - 3)
+          // 2 * LCD_HEIGHT to scroll to bottom of next page. (LCD_HEIGHT would only go 1 item down.)
+          encoderDiff = ENCODER_PULSES_PER_STEP * (encoderLine - encoderTopLine + 2 * (LCD_HEIGHT)) * ydir;
+        else
+          encoderDiff = ENCODER_PULSES_PER_STEP * (row - encoderPosition + encoderTopLine);
+      }
+      else if (!on_status_screen())
+        encoderDiff = ENCODER_PULSES_PER_STEP * xdir;
     }
 
   #endif
@@ -1461,29 +1472,14 @@ void MarlinUI::update() {
   //
   // Send the status line as a host notification
   //
-
   void MarlinUI::set_status(const char * const message, const bool) {
-    #if ENABLED(HOST_PROMPT_SUPPORT)
-      host_action_notify(message);
-    #else
-      UNUSED(message);
-    #endif
+    TERN(HOST_PROMPT_SUPPORT, host_action_notify(message), UNUSED(message));
   }
-
   void MarlinUI::set_status_P(PGM_P message, const int8_t) {
-    #if ENABLED(HOST_PROMPT_SUPPORT)
-      host_action_notify(message);
-    #else
-      UNUSED(message);
-    #endif
+    TERN(HOST_PROMPT_SUPPORT, host_action_notify_P(message), UNUSED(message));
   }
-
   void MarlinUI::status_printf_P(const uint8_t, PGM_P const message, ...) {
-    #if ENABLED(HOST_PROMPT_SUPPORT)
-      host_action_notify(message);
-    #else
-      UNUSED(message);
-    #endif
+    TERN(HOST_PROMPT_SUPPORT, host_action_notify_P(message), UNUSED(message));
   }
 
 #endif // !HAS_DISPLAY
@@ -1507,7 +1503,9 @@ void MarlinUI::update() {
         TERN_(EXTENSIBLE_UI, ExtUI::onMediaRemoved()); // ExtUI response
         #if PIN_EXISTS(SD_DETECT)
           set_status_P(GET_TEXT(MSG_MEDIA_REMOVED));
-          TERN_(HAS_LCD_MENU, return_to_status());
+          #if HAS_LCD_MENU
+            if (!defer_return_to_status) return_to_status();
+          #endif
         #endif
       }
     }
@@ -1530,3 +1528,56 @@ void MarlinUI::update() {
   }
 
 #endif // SDSUPPORT
+
+#if HAS_LCD_MENU
+  void MarlinUI::reset_settings() { settings.reset(); completion_feedback(); }
+#endif
+
+#if ENABLED(EEPROM_SETTINGS)
+
+  #if HAS_LCD_MENU
+    void MarlinUI::init_eeprom() {
+      const bool good = settings.init_eeprom();
+      completion_feedback(good);
+      return_to_status();
+    }
+    void MarlinUI::load_settings() {
+      const bool good = settings.load();
+      completion_feedback(good);
+    }
+    void MarlinUI::store_settings() {
+      const bool good = settings.save();
+      completion_feedback(good);
+    }
+  #endif
+
+  #if DISABLED(EEPROM_AUTO_INIT)
+
+    static inline PGM_P eeprom_err(const uint8_t msgid) {
+      switch (msgid) {
+        default:
+        case 0: return GET_TEXT(MSG_ERR_EEPROM_CRC);
+        case 1: return GET_TEXT(MSG_ERR_EEPROM_INDEX);
+        case 2: return GET_TEXT(MSG_ERR_EEPROM_VERSION);
+      }
+    }
+
+    void MarlinUI::eeprom_alert(const uint8_t msgid) {
+      #if HAS_LCD_MENU
+        editable.uint8 = msgid;
+        goto_screen([]{
+          PGM_P const restore_msg = GET_TEXT(MSG_INIT_EEPROM);
+          char msg[utf8_strlen_P(restore_msg) + 1];
+          strcpy_P(msg, restore_msg);
+          MenuItem_confirm::select_screen(
+            GET_TEXT(MSG_BUTTON_RESET), GET_TEXT(MSG_BUTTON_IGNORE),
+            init_eeprom, return_to_status,
+            eeprom_err(editable.uint8), msg, PSTR("?")
+          );
+        });
+      #else
+        set_status_P(eeprom_err(msgid));
+      #endif
+    }
+  #endif
+#endif

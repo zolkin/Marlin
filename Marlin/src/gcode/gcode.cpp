@@ -180,13 +180,9 @@ void GcodeSuite::get_destination_from_command() {
   #if ENABLED(LASER_MOVE_POWER)
     // Set the laser power in the planner to configure this move
     if (parser.seen('S'))
-      cutter.inline_power(parser.value_int());
-    else {
-      #if ENABLED(LASER_MOVE_G0_OFF)
-        if (parser.codenum == 0)        // G0
-          cutter.inline_enabled(false);
-      #endif
-    }
+      cutter.inline_power(cutter.power_to_range(cutter_power_t(round(parser.value_float()))));
+    else if (ENABLED(LASER_MOVE_G0_OFF) && parser.codenum == 0) // G0
+      cutter.set_inline_enabled(false);
   #endif
 }
 
@@ -259,6 +255,10 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
 
       #if ENABLED(BEZIER_CURVE_SUPPORT)
         case 5: G5(); break;                                      // G5: Cubic B_spline
+      #endif
+
+      #if ENABLED(DIRECT_STEPPING)
+        case 6: G6(); break;                                      // G6: Direct Stepper Move
       #endif
 
       #if ENABLED(FWRETRACT)
@@ -768,6 +768,10 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
       #if ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
         case 701: M701(); break;                                  // M701: Load Filament
         case 702: M702(); break;                                  // M702: Unload Filament
+        case 703: M703(); break;                                  // MMU2 Load filament T<Extruder>
+        case 704: M704(); break;                                  // MMU2 Load filament to nozzle T<Extruder>
+        case 705: M705(); break;                                  // MMU2 Unload filament
+        case 706: M706(); break;                                  // MMU2 Eject filament
       #endif
 
       #if ENABLED(CONTROLLER_FAN_EDITABLE)

@@ -239,4 +239,62 @@ void GcodeSuite::M702() {
   TERN_(HAS_LCD_MENU, lcd_pause_show_message(PAUSE_MESSAGE_STATUS));
 }
 
+ /**
+ * M703: MMU2 Load filament
+ *  T<extruder> - Extruder number. 
+ */
+void GcodeSuite::M703() {
+  #if ENABLED(PRUSA_MMU2)
+    const int8_t target_extruder = get_target_extruder_from_command();
+    if (target_extruder < 0) return;
+    ui.return_to_status();
+    ui.status_printf_P(0, GET_TEXT(MSG_MMU2_LOADING_FILAMENT), int(target_extruder + 1));
+    mmu2.load_filament(target_extruder);
+    ui.reset_status();
+  #endif
+}
+/**
+ * M704: MMU2 Load filament to nozzle
+ *  T<extruder> - Extruder number. 
+ */
+void GcodeSuite::M704() {
+  #if ENABLED(PRUSA_MMU2)
+    const int8_t target_extruder = get_target_extruder_from_command();
+    if (target_extruder < 0) return;
+    ui.return_to_status();
+    ui.status_printf_P(0, GET_TEXT(MSG_MMU2_LOADING_FILAMENT), int(target_extruder + 1));
+    mmu2.load_filament_to_nozzle(target_extruder);
+    ui.reset_status();
+  #endif
+}
+
+/**
+ * M705: MMU2 Unload filament
+ **/
+void GcodeSuite::M705() {
+    #if ENABLED(PRUSA_MMU2)
+    const int8_t target_extruder = get_target_extruder_from_command();
+    if (target_extruder < 0) return;
+    ui.return_to_status();
+    LCD_MESSAGEPGM(MSG_MMU2_UNLOADING_FILAMENT);
+    mmu2.unload();
+    ui.reset_status();
+  #endif
+}
+
+/**
+ * M706: MMU2 Eject filament
+ **/
+void GcodeSuite::M706() {
+  #if ENABLED(PRUSA_MMU2)
+    const int8_t target_extruder = get_target_extruder_from_command();
+    if (target_extruder < 0) return;
+    ui.return_to_status();
+    LCD_MESSAGEPGM(MSG_MMU2_EJECT_FILAMENT );
+    mmu2.eject_filament(target_extruder,true);
+    ui.reset_status();
+  #endif
+}
+
+
 #endif // ADVANCED_PAUSE_FEATURE
