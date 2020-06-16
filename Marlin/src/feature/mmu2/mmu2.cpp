@@ -891,8 +891,8 @@ void MMU2::filament_runout() {
 
 #if ENABLED(PRUSA_MMU2_S_MODE)
 
-  void MMU2::check_filament(bool send_to_mmu /*= true*/) {
-    bool toolchange_timeout_passed = prev_T_request != MMU_INVALID_ELAPSED_TIME && ELAPSED(millis(), prev_T_request + MMU2_TOOLCHANGE_MIN_TIME_MS);
+  void MMU2::check_filament() {
+    bool toolchange_timeout_passed = prev_T_request == MMU_INVALID_ELAPSED_TIME || ELAPSED(millis(), prev_T_request + MMU2_TOOLCHANGE_MIN_TIME_MS);
     const bool present = FILAMENT_PRESENT();
     if (!toolchange_timeout_passed) // ignore sensor for a while after toolchange requested
     {
@@ -903,7 +903,7 @@ void MMU2::filament_runout() {
       return;
     }
     prev_T_request = MMU_INVALID_ELAPSED_TIME;
-    if (present && !mmu2s_triggered && send_to_mmu) {
+    if (present && !mmu2s_triggered) {
       DEBUG_ECHOLNPGM("MMU <= 'A'");
       tx_str_P(PSTR("A\n"));
     }
@@ -918,7 +918,7 @@ void MMU2::filament_runout() {
     DEBUG_ECHOLNPGM("MMU can_load:");
     LOOP_L_N(i, steps) {
       execute_extruder_sequence((const E_Step *)can_load_increment_sequence, COUNT(can_load_increment_sequence));
-      check_filament(false); // Don't trust the idle function
+      check_filament(); // Don't trust the idle function
       DEBUG_CHAR(mmu2s_triggered ? 'O' : 'o');
       if (mmu2s_triggered) ++filament_detected_count;
     }

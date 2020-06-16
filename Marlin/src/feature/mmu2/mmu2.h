@@ -82,7 +82,7 @@ private:
 
   #if ENABLED(PRUSA_MMU2_S_MODE)
     static bool mmu2s_triggered;
-    static void check_filament(bool send_to_mmu = true);
+    static void check_filament();
     static bool can_load();
     static bool load_to_gears();
   #else
