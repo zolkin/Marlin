@@ -91,6 +91,8 @@ MMU2 mmu2;
 
 #define mmuSerial   MMU2_SERIAL
 
+#define MMU_INVALID_ELAPSED_TIME ( millis_t(-1) )
+
 bool MMU2::enabled, MMU2::ready, MMU2::mmu_print_saved;
 #if ENABLED(PRUSA_MMU2_S_MODE)
   bool MMU2::mmu2s_triggered;
@@ -100,7 +102,7 @@ int8_t MMU2::state = 0;
 volatile int8_t MMU2::finda = 1;
 volatile bool MMU2::finda_runout_valid;
 int16_t MMU2::version = -1, MMU2::buildnr = -1;
-millis_t MMU2::prev_request, MMU2::prev_P0_request, MMU2::prev_T_request = 0;
+millis_t MMU2::prev_request, MMU2::prev_P0_request, MMU2::prev_T_request = MMU_INVALID_ELAPSED_TIME;
 char MMU2::rx_buffer[MMU_RX_SIZE], MMU2::tx_buffer[MMU_TX_SIZE];
 
 #if BOTH(HAS_LCD_MENU, MMU2_MENUS)
@@ -518,7 +520,7 @@ static bool mmu2_not_responding() {
       prev_T_request = millis();
       command(MMU_CMD_T0 + index);
       manage_response(true, true);
-      prev_T_request = 0;
+      prev_T_request = MMU_INVALID_ELAPSED_TIME;
 
       char MMU_Tx_MSG[] = "MMU T0 => ok\n";
       MMU_Tx_MSG[5] += index;
@@ -890,10 +892,17 @@ void MMU2::filament_runout() {
 #if ENABLED(PRUSA_MMU2_S_MODE)
 
   void MMU2::check_filament(bool send_to_mmu /*= true*/) {
-    bool toolchange_timeout_passed = prev_T_request != 0 && ELAPSED(millis(), prev_T_request + MMU2_TOOLCHANGE_MIN_TIME_MS);
-    if (!toolchange_timeout_passed) // ignore sensor for a while after toolchange requested
-      return;
+    bool toolchange_timeout_passed = prev_T_request != MMU_INVALID_ELAPSED_TIME && ELAPSED(millis(), prev_T_request + MMU2_TOOLCHANGE_MIN_TIME_MS);
     const bool present = FILAMENT_PRESENT();
+    if (!toolchange_timeout_passed) // ignore sensor for a while after toolchange requested
+    {
+      if (present && !mmu2s_triggered)
+      {
+        DEBUG_ECHOLNPGM("MMU <= A filtered");
+      }
+      return;
+    }
+    prev_T_request = MMU_INVALID_ELAPSED_TIME;
     if (present && !mmu2s_triggered && send_to_mmu) {
       DEBUG_ECHOLNPGM("MMU <= 'A'");
       tx_str_P(PSTR("A\n"));
