@@ -3366,7 +3366,7 @@
 
     // Delay between tool change request and first valid extruder sensor reading
     // Needed to avoid false triggering by long filament tips
-    #define MMU2_TOOLCHANGE_MIN_TIME_MS 1000 
+    #define MMU2_TOOLCHANGE_MIN_TIME_MS 3000 
 
     #define MMU2_LOAD_TO_NOZZLE_SEQUENCE \
       {  7.2, 1145 }, \
@@ -3411,7 +3411,7 @@
 
   #define PRUSA_MMU2_S_MODE
   #if ENABLED(PRUSA_MMU2_S_MODE)
-    #define MMU2_C0_RETRY   10             // Number of retries (total time = timeout*retries)
+    #define MMU2_C0_RETRY   25             // Number of retries (total time = timeout*retries)
 
     #define MMU2_CAN_LOAD_FEEDRATE 800    // (mm/m)
     #define MMU2_CAN_LOAD_SEQUENCE \
