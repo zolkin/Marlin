@@ -3364,6 +3364,8 @@
     #define MMU2_C0_LOAD_LENGTH 43.1 //38.1 // mm 5mm more than MMU pushes, just in case
     #define MMU2_C0_LOAD_FEEDRATE 1141.2 // mm/min, taken from mmcontrol
 
+    #define MMU2_TOOLCHANGE_MIN_TIME_MS 2000
+
     #define MMU2_LOAD_TO_NOZZLE_SEQUENCE \
       {  7.2, 1145 }, \
       { 14.4,  871 }, \
