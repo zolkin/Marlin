@@ -100,7 +100,7 @@ private:
   static volatile int8_t finda;
   static volatile bool finda_runout_valid;
   static int16_t version, buildnr;
-  static millis_t prev_request, prev_P0_request, prev_T_request;
+  static millis_t prev_request, prev_P0_request, prev_T_request, prev_extruder_move;
   static char rx_buffer[MMU_RX_SIZE], tx_buffer[MMU_TX_SIZE];
 
   static inline void set_runout_valid(const bool valid) {
