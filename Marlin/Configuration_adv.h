@@ -1131,7 +1131,7 @@
    * an option on the LCD screen to continue the print from the last-known
    * point in the file.
    */
-  //#define POWER_LOSS_RECOVERY
+  #define POWER_LOSS_RECOVERY
   #if ENABLED(POWER_LOSS_RECOVERY)
     #define PLR_ENABLED_DEFAULT   false // Power Loss Recovery enabled by default. (Set with 'M413 Sn' & M500)
     //#define BACKUP_POWER_SUPPLY       // Backup power / UPS to move the steppers on power loss
@@ -1840,7 +1840,7 @@
 // For debug-echo: 128 bytes for the optimal speed.
 // Other output doesn't need to be that speedy.
 // :[0, 2, 4, 8, 16, 32, 64, 128, 256]
-#define TX_BUFFER_SIZE 32
+#define TX_BUFFER_SIZE 128
 
 // Host Receive Buffer Size
 // Without XON/XOFF flow control (see SERIAL_XON_XOFF below) 32 bytes should be enough.
@@ -3315,7 +3315,7 @@
  * WiFi Support (Espressif ESP32 WiFi)
  */
 //#define WIFISUPPORT         // Marlin embedded WiFi managenent
-//#define ESP3D_WIFISUPPORT   // ESP3D Library WiFi management (https://github.com/luc-github/ESP3DLib)
+#define ESP3D_WIFISUPPORT   // ESP3D Library WiFi management (https://github.com/luc-github/ESP3DLib)
 
 #if EITHER(WIFISUPPORT, ESP3D_WIFISUPPORT)
   //#define WEBSUPPORT          // Start a webserver (which may include auto-discovery)
@@ -3346,7 +3346,7 @@
   #define MMU2_SERIAL Serial1
 
   // Use hardware reset for MMU if a pin is defined for it
-  #define MMU2_RST_PIN PF6
+  //#define MMU2_RST_PIN PF6
 
   // Enable if the MMU2 has 12V stepper motors (MMU2 Firmware 1.0.2 and up)
   //#define MMU2_MODE_12V
@@ -3361,7 +3361,7 @@
     // This is for Ancubic Predator with BMG extruder clone. Customize for your hardware.
     #define MMU2_FILAMENTCHANGE_EJECT_FEED 227.0 // mm
     #define MMU2_FILAMENTCHANGE_EJECT_FEEDRATE 2500 // mm/min.
-    #define MMU2_C0_LOAD_LENGTH 43.1 //38.1 // mm 5mm more than MMU pushes, just in case
+    #define MMU2_C0_LOAD_LENGTH 38.1 // taken from MM-Control 
     #define MMU2_C0_LOAD_FEEDRATE 1141.2 // mm/min, taken from mmcontrol
 
     // Delay between tool change request and first valid extruder sensor reading
@@ -3371,9 +3371,9 @@
     #define MMU2_LOAD_TO_NOZZLE_SEQUENCE \
       {  7.2, 1145 }, \
       { 14.4,  871 }, \
-      { 60.0, 1393 },\
+      { 100.0, 1393 },\
       { 14.4,  871 }, \
-      { 37.0,  500 }
+      { 17.0,  500 }
 
 // Anycubic predator nozzle to gears distance - approx 260mm
     #define MMU2_RAMMING_SEQUENCE \

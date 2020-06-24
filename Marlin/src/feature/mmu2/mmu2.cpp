@@ -51,7 +51,7 @@ MMU2 mmu2;
 
 #define MMU_TODELAY 100
 #define MMU_TIMEOUT 10
-#define MMU_CMD_TIMEOUT 90000UL // 90s timeout for mmu commands (except P0)
+#define MMU_CMD_TIMEOUT 60000UL // 90s timeout for mmu commands (except P0)
 #define MMU_P0_TIMEOUT 3000UL   // Timeout for P0 command: 3seconds
 
 #if ENABLED(MMU_EXTRUDER_SENSOR)
@@ -344,10 +344,20 @@ void MMU2::mmu_loop() {
       #endif
 
       if (rx_ok()) {
-        DEBUG_ECHOLNPGM("MMU => 'ok'");
-        ready = true;
-        state = 1;
-        last_cmd = MMU_CMD_NONE;
+        if (WITHIN(last_cmd, MMU_CMD_T0, MMU_CMD_T4) && !mmu2s_triggered)
+        {
+          DEBUG_ECHOLNPGM("MMU T retry!"); // against misloads!
+          cmd = last_cmd;
+          last_cmd = MMU_CMD_NONE;
+          state = 1;
+        } 
+        else
+        {
+          DEBUG_ECHOLNPGM("MMU => 'ok'");
+          ready = true;
+          state = 1;
+          last_cmd = MMU_CMD_NONE;
+        }
       }
       else if (ELAPSED(millis(), prev_request + MMU_CMD_TIMEOUT)) {
         // resend request after timeout
@@ -476,16 +486,13 @@ static bool mmu2_not_responding() {
   BUZZ(100, 659);
   BUZZ(300, 440);
   BUZZ(100, 659);
+  return true;
 }
 
 #if ENABLED(PRUSA_MMU2_S_MODE)
 
   bool MMU2::load_to_gears() {
-    // command(MMU_CMD_C0);
     ENABLE_AXIS_E0();
-    // current_position.e += MMU2_C0_LOAD_LENGTH;
-    // line_to_current_position(MMU2_C0_LOAD_FEEDRATE / 60);
-    // manage_response(true, true);
     LOOP_L_N(i, MMU2_C0_RETRY) {  // Keep loading until filament reaches gears
       if (mmu2s_triggered) break;
       command(MMU_CMD_C0);
@@ -519,6 +526,7 @@ static bool mmu2_not_responding() {
       }
 
       prev_T_request = millis();
+      prev_extruder_move = MMU_INVALID_ELAPSED_TIME;
       command(MMU_CMD_T0 + index);
       manage_response(true, true);
       prev_T_request = MMU_INVALID_ELAPSED_TIME;
@@ -905,22 +913,16 @@ void MMU2::filament_runout() {
           const millis_t time = millis();
           if (ELAPSED(time, prev_extruder_move + 100)) // move not more then 
           {
-            DEBUG_ECHOLNPGM("E Feed");
             const millis_t last_time = prev_extruder_move;
             prev_extruder_move = time;
             current_position.e +=  float(prev_extruder_move - last_time) / 1000 * MMM_TO_MMS(MMU2_C0_LOAD_FEEDRATE);
-            line_to_current_position(MMU2_C0_LOAD_FEEDRATE / 60);
+            line_to_current_position(MMM_TO_MMS(MMU2_C0_LOAD_FEEDRATE));
           }
         }
         else
           prev_extruder_move = millis();
         
       }
-      else // filament catched by gears
-      {
-        DISABLE_AXIS_E0();
-      }
-      
     }
     if (present && !mmu2s_triggered) {
       DEBUG_ECHOLNPGM("MMU <= 'A'");
@@ -978,6 +980,7 @@ void MMU2::filament_runout() {
     }
 
     prev_T_request = millis();
+    prev_extruder_move = MMU_INVALID_ELAPSED_TIME;
     command(MMU_CMD_T0 + index);
     manage_response(true, true);
     prev_T_request = MMU_INVALID_ELAPSED_TIME;
@@ -1017,10 +1020,13 @@ void MMU2::filament_runout() {
 
     LCD_MESSAGEPGM(MSG_MMU2_EJECTING_FILAMENT);
 
-    ENABLE_AXIS_E0();
-    current_position.e -= MMU2_FILAMENTCHANGE_EJECT_FEED;
-    line_to_current_position(MMU2_FILAMENTCHANGE_EJECT_FEEDRATE / 60);
-    planner.synchronize();
+    if (FILAMENT_PRESENT())
+    {
+      ENABLE_AXIS_E0();
+      current_position.e -= MMU2_FILAMENTCHANGE_EJECT_FEED;
+      line_to_current_position(MMU2_FILAMENTCHANGE_EJECT_FEEDRATE / 60);
+      planner.synchronize();
+    }
     command(MMU_CMD_E0 + index);
     manage_response(false, false);
 
